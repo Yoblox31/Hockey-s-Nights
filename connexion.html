@@ -57,7 +57,7 @@
     #message {
       margin-top: 20px;
       font-weight: 600;
-      display: none; /* Message caché par défaut */
+      display: none; /* caché par défaut */
       min-height: 24px;
     }
     input:focus {
@@ -93,14 +93,14 @@
       text-decoration: none;
       font-size: 0.9rem;
       padding: 0 8px;
-      white-space: nowrap; /* Empêche le retour à la ligne */
+      white-space: nowrap;
     }
     .auth-links a:hover {
       text-decoration: underline;
     }
     .separator {
       width: 1px;
-      height: 24px; /* plus longue */
+      height: 24px;
       background-color: #1e90ff;
       opacity: 0.6;
     }
@@ -114,26 +114,21 @@
     <button id="login-btn">Se connecter</button>
     <p id="message"></p>
     <div class="auth-links">
-      <a href="inscription.html">S'inscrire </a>
+      <a href="inscription.html">S'inscrire</a>
       <div class="separator"></div>
       <a href="#" id="reset-link">Mot de passe oublié ?</a>
     </div>
   </div>
 
+  <!-- Firebase SDK (version compat uniquement) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDdu5jKEUqeCeiQjt4OWijhXqcaAJWqMks",
-      authDomain: "hockey-s-nights.firebaseapp.com",
-      projectId: "hockey-s-nights",
-      storageBucket: "hockey-s-nights.firebasestorage.app",
-      messagingSenderId: "238322019721",
-      appId: "1:238322019721:web:d9c914eef7a379bd024558",
-      measurementId: "G-05Q61NFRJ8"
-    };
+  <!-- Configuration privée -->
+  <script src="./.env.js"></script>
 
+  <script>
+    // Initialise Firebase avec la config
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
@@ -152,7 +147,7 @@
     }
 
     function showMessage(text, color) {
-      if(text) {
+      if (text) {
         messageP.style.display = 'block';
         messageP.textContent = text;
         messageP.style.color = color;
@@ -185,7 +180,7 @@
       auth.signInWithEmailAndPassword(email, password)
         .then(() => {
           showMessage("Connexion réussie ! Redirection...", "green");
-          setTimeout(() => window.location.href = "dashboard.html", 1200); // redirection vers dashboard
+          setTimeout(() => window.location.href = "dashboard.html", 1200);
         })
         .catch(error => {
           const friendly = errorMessages[error.code] || ("Erreur : " + error.message);

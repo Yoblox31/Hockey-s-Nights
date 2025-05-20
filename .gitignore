@@ -1,0 +1,2 @@
+# Ne pas suivre le fichier contenant la clé Firebase
+.env.js

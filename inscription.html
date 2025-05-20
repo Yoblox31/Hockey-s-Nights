@@ -1,13 +1,17 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>  
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Inscription - Hockey’s Nights</title>
+
   <style>
+    /* Reset et boîte incluant les bordures dans les dimensions */
     *, *::before, *::after {
       box-sizing: border-box;
     }
+
+    /* Style global du corps de page */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: url('fond-accueil.png') no-repeat center center fixed;
@@ -19,6 +23,8 @@
       height: 100vh;
       margin: 0;
     }
+
+    /* Conteneur du formulaire d'authentification */
     #auth-section {
       background: rgba(30, 30, 30, 0.85);
       padding: 30px 40px;
@@ -27,9 +33,12 @@
       width: 320px;
       text-align: center;
     }
+
     h2 {
       margin-bottom: 25px;
     }
+
+    /* Champs input */
     input {
       width: 100%;
       padding: 12px 10px;
@@ -39,6 +48,8 @@
       font-size: 1rem;
       text-align: center;
     }
+
+    /* Bouton principal */
     button {
       width: 100%;
       padding: 12px;
@@ -51,21 +62,28 @@
       color: white;
       transition: background-color 0.3s ease;
     }
+
     button:hover {
       background-color: #04118a;
     }
+
+    /* Message d'erreur ou confirmation */
     #message {
       margin-top: 20px;
       min-height: 24px;
       font-weight: 600;
       display: none; /* caché par défaut */
     }
+
+    /* Focus sur les inputs */
     input:focus {
       outline: none;
       box-shadow: 0 0 8px 2px #1e90ff;
       border-radius: 8px;
       transition: box-shadow 0.3s ease;
     }
+
+    /* Spinner d'attente */
     .spinner {
       border: 3px solid rgba(255, 255, 255, 0.3);
       border-top: 3px solid white;
@@ -81,6 +99,8 @@
       0% { transform: rotate(0deg);}
       100% { transform: rotate(360deg);}
     }
+
+    /* Lien de retour vers connexion */
     a {
       display: block;
       margin-top: 15px;
@@ -103,28 +123,31 @@
     <a href="connexion.html">Déjà un compte ? Se connecter</a>
   </div>
 
+  <!-- Librairies Firebase Compat (ancienne API) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDdu5jKEUqeCeiQjt4OWijhXqcaAJWqMks",
-      authDomain: "hockey-s-nights.firebaseapp.com",
-      projectId: "hockey-s-nights",
-      storageBucket: "hockey-s-nights.firebasestorage.app",
-      messagingSenderId: "238322019721",
-      appId: "1:238322019721:web:d9c914eef7a379bd024558",
-      measurementId: "G-05Q61NFRJ8"
-    };
+  <!-- Chargement de ta config Firebase privée -->
+  <script src="./.env.js"></script> 
 
-    firebase.initializeApp(firebaseConfig);
+  <!-- Initialisation Firebase (moderne) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+
+  <script>
+    // Initialisation Firebase avec la config importée
+    const app = firebase.initializeApp(firebaseConfig);
+
+    // Accès aux services Auth et Firestore
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // Récupération des éléments du DOM
     const signupBtn = document.getElementById('signup-btn');
     const messageP = document.getElementById('message');
 
+    // Affiche un message dans la zone message, ou le cache si vide
     function showMessage(text, color) {
       if (text) {
         messageP.style.display = 'block';
@@ -136,6 +159,7 @@
       }
     }
 
+    // Active/désactive le bouton et affiche un spinner pendant le chargement
     function setLoading(button, isLoading) {
       if (isLoading) {
         button.disabled = true;
@@ -146,35 +170,37 @@
       }
     }
 
+    // Événement au clic du bouton inscription
     signupBtn.addEventListener('click', async () => {
       const pseudo = document.getElementById('pseudo').value.trim();
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value.trim();
 
-      showMessage('', '');
+      showMessage('', ''); // Nettoyer messages précédents
 
-      // Vérification présence champs
+      // Vérification des champs remplis
       if (!pseudo || !email || !password) {
         showMessage("Veuillez remplir tous les champs.", "orange");
         return;
       }
 
-      // Limite longueur max
+      // Vérifie la longueur max du pseudo
       if (pseudo.length > 20) {
         showMessage("Le pseudo ne doit pas dépasser 20 caractères.", "orange");
         return;
       }
 
-      // Vérifier au moins 4 lettres dans le pseudo
+      // Vérifie qu’il y a au moins 4 lettres dans le pseudo
       const lettersCount = (pseudo.match(/[a-zA-Z]/g) || []).length;
       if (lettersCount < 4) {
         showMessage("Le pseudo doit contenir au moins 4 lettres.", "orange");
         return;
       }
 
-      setLoading(signupBtn, true);
+      setLoading(signupBtn, true); // Affiche spinner et désactive bouton
 
       try {
+        // Vérifie si le pseudo est déjà utilisé dans Firestore
         const snapshot = await db.collection("users").where("pseudo", "==", pseudo).get();
         if (!snapshot.empty) {
           showMessage("Ce pseudo est déjà pris. Veuillez en choisir un autre.", "red");
@@ -182,12 +208,15 @@
           return;
         }
 
+        // Crée le compte Firebase Auth avec email + mot de passe
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
         const uid = user.uid;
 
+        // Met à jour le profil utilisateur avec le pseudo
         await user.updateProfile({ displayName: pseudo });
 
+        // Enregistre les infos dans Firestore dans la collection "users"
         await db.collection("users").doc(uid).set({
           pseudo: pseudo,
           email: email,
@@ -197,6 +226,7 @@
         showMessage("Inscription réussie ! Vous pouvez maintenant vous connecter.", "green");
 
       } catch (error) {
+        // Gestion des erreurs les plus courantes Firebase Auth
         let errorMessage = "Une erreur est survenue. Merci de réessayer plus tard.";
 
         if (error.code === "auth/invalid-email") {
@@ -211,7 +241,7 @@
 
         showMessage(errorMessage, "red");
       } finally {
-        setLoading(signupBtn, false);
+        setLoading(signupBtn, false); // Toujours réactiver bouton et enlever spinner
       }
     });
   </script>
