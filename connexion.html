@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connexion - Hockey’s Nights</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: url('fond-accueil.png') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #auth-section {
+      background: rgba(30, 30, 30, 0.85);
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+      width: 320px;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 25px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 10px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      text-align: center;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: #1e90ff;
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #04118a;
+    }
+    #message {
+      margin-top: 20px;
+      font-weight: 600;
+      display: none; /* Message caché par défaut */
+      min-height: 24px;
+    }
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 8px 2px #1e90ff;
+      border-radius: 8px;
+      transition: box-shadow 0.3s ease;
+    }
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+    .auth-links {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    .auth-links a {
+      color: #1e90ff;
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 0 8px;
+      white-space: nowrap; /* Empêche le retour à la ligne */
+    }
+    .auth-links a:hover {
+      text-decoration: underline;
+    }
+    .separator {
+      width: 1px;
+      height: 24px; /* plus longue */
+      background-color: #1e90ff;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <div id="auth-section">
+    <h2>Connexion</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Mot de passe" />
+    <button id="login-btn">Se connecter</button>
+    <p id="message"></p>
+    <div class="auth-links">
+      <a href="inscription.html">S'inscrire </a>
+      <div class="separator"></div>
+      <a href="#" id="reset-link">Mot de passe oublié ?</a>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBe7xozevYm9Pol6_RjYRza0ackhY7p3M4",
+      authDomain: "hockey-s-nights.firebaseapp.com",
+      projectId: "hockey-s-nights",
+      storageBucket: "hockey-s-nights.firebasestorage.app",
+      messagingSenderId: "238322019721",
+      appId: "1:238322019721:web:d9c914eef7a379bd024558",
+      measurementId: "G-05Q61NFRJ8"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    const loginBtn = document.getElementById('login-btn');
+    const messageP = document.getElementById('message');
+    const resetLink = document.getElementById('reset-link');
+
+    function setLoading(button, isLoading) {
+      if (isLoading) {
+        button.disabled = true;
+        button.innerHTML = button.textContent + '<span class="spinner"></span>';
+      } else {
+        button.disabled = false;
+        button.innerHTML = button.textContent.replace(/\s*<span class="spinner"><\/span>/, '');
+      }
+    }
+
+    function showMessage(text, color) {
+      if(text) {
+        messageP.style.display = 'block';
+        messageP.textContent = text;
+        messageP.style.color = color;
+      } else {
+        messageP.style.display = 'none';
+        messageP.textContent = '';
+      }
+    }
+
+    const errorMessages = {
+      "auth/user-not-found": "Aucun compte trouvé avec cet email.",
+      "auth/wrong-password": "Mot de passe incorrect.",
+      "auth/invalid-email": "Format d’email invalide.",
+      "auth/missing-password": "Mot de passe requis.",
+      "auth/too-many-requests": "Trop de tentatives. Réessayez plus tard.",
+    };
+
+    loginBtn.addEventListener('click', () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      if (!email || !password) {
+        showMessage("Merci de remplir tous les champs.", "orange");
+        return;
+      }
+
+      setLoading(loginBtn, true);
+      showMessage('', '');
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          showMessage("Connexion réussie ! Redirection...", "green");
+          setTimeout(() => window.location.href = "dashboard.html", 1200); // redirection vers dashboard
+        })
+        .catch(error => {
+          const friendly = errorMessages[error.code] || ("Erreur : " + error.message);
+          showMessage(friendly, "red");
+        })
+        .finally(() => setLoading(loginBtn, false));
+    });
+
+    resetLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      if (!email) {
+        showMessage("Entrez votre email pour réinitialiser.", "orange");
+        return;
+      }
+      auth.sendPasswordResetEmail(email)
+        .then(() => {
+          showMessage("Email de réinitialisation envoyé.", "green");
+        })
+        .catch(error => {
+          const friendly = errorMessages[error.code] || ("Erreur : " + error.message);
+          showMessage(friendly, "red");
+        });
+    });
+  </script>
+</body>
+</html>

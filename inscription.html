@@ -1,0 +1,219 @@
+<!DOCTYPE html> 
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inscription - Hockey’s Nights</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: url('fond-accueil.png') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #auth-section {
+      background: rgba(30, 30, 30, 0.85);
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+      width: 320px;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 25px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 10px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      text-align: center;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: #1e90ff;
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #04118a;
+    }
+    #message {
+      margin-top: 20px;
+      min-height: 24px;
+      font-weight: 600;
+      display: none; /* caché par défaut */
+    }
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 8px 2px #1e90ff;
+      border-radius: 8px;
+      transition: box-shadow 0.3s ease;
+    }
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+    a {
+      display: block;
+      margin-top: 15px;
+      color: #1e90ff;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div id="auth-section">
+    <h2>Inscription</h2>
+    <input type="text" id="pseudo" placeholder="Pseudo" maxlength="20" />
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Mot de passe" />
+    <button id="signup-btn">S’inscrire</button>
+    <p id="message"></p>
+    <a href="connexion.html">Déjà un compte ? Se connecter</a>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBe7xozevYm9Pol6_RjYRza0ackhY7p3M4",
+      authDomain: "hockey-s-nights.firebaseapp.com",
+      projectId: "hockey-s-nights",
+      storageBucket: "hockey-s-nights.firebasestorage.app",
+      messagingSenderId: "238322019721",
+      appId: "1:238322019721:web:d9c914eef7a379bd024558",
+      measurementId: "G-05Q61NFRJ8"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const signupBtn = document.getElementById('signup-btn');
+    const messageP = document.getElementById('message');
+
+    function showMessage(text, color) {
+      if (text) {
+        messageP.style.display = 'block';
+        messageP.textContent = text;
+        messageP.style.color = color;
+      } else {
+        messageP.style.display = 'none';
+        messageP.textContent = '';
+      }
+    }
+
+    function setLoading(button, isLoading) {
+      if (isLoading) {
+        button.disabled = true;
+        button.innerHTML = "S’inscrire <span class='spinner'></span>";
+      } else {
+        button.disabled = false;
+        button.innerHTML = "S’inscrire";
+      }
+    }
+
+    signupBtn.addEventListener('click', async () => {
+      const pseudo = document.getElementById('pseudo').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      showMessage('', '');
+
+      // Vérification présence champs
+      if (!pseudo || !email || !password) {
+        showMessage("Veuillez remplir tous les champs.", "orange");
+        return;
+      }
+
+      // Limite longueur max
+      if (pseudo.length > 20) {
+        showMessage("Le pseudo ne doit pas dépasser 20 caractères.", "orange");
+        return;
+      }
+
+      // Vérifier au moins 4 lettres dans le pseudo
+      const lettersCount = (pseudo.match(/[a-zA-Z]/g) || []).length;
+      if (lettersCount < 4) {
+        showMessage("Le pseudo doit contenir au moins 4 lettres.", "orange");
+        return;
+      }
+
+      setLoading(signupBtn, true);
+
+      try {
+        const snapshot = await db.collection("users").where("pseudo", "==", pseudo).get();
+        if (!snapshot.empty) {
+          showMessage("Ce pseudo est déjà pris. Veuillez en choisir un autre.", "red");
+          setLoading(signupBtn, false);
+          return;
+        }
+
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        const uid = user.uid;
+
+        await user.updateProfile({ displayName: pseudo });
+
+        await db.collection("users").doc(uid).set({
+          pseudo: pseudo,
+          email: email,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        showMessage("Inscription réussie ! Vous pouvez maintenant vous connecter.", "green");
+
+      } catch (error) {
+        let errorMessage = "Une erreur est survenue. Merci de réessayer plus tard.";
+
+        if (error.code === "auth/invalid-email") {
+          errorMessage = "L'adresse email saisie n'est pas valide.";
+        } else if (error.code === "auth/email-already-in-use") {
+          errorMessage = "Cette adresse email est déjà utilisée.";
+        } else if (error.code === "auth/weak-password") {
+          errorMessage = "Le mot de passe est trop faible (au moins 6 caractères).";
+        } else if (error.code === "auth/network-request-failed") {
+          errorMessage = "Problème de connexion internet. Vérifiez votre réseau.";
+        }
+
+        showMessage(errorMessage, "red");
+      } finally {
+        setLoading(signupBtn, false);
+      }
+    });
+  </script>
+</body>
+</html>

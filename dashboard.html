@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tableau de bord - Hockey’s Nights</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: url('fond-accueil.png') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      margin: 0; padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      background: rgba(30,30,30,0.85);
+      width: 100%;
+      padding: 15px 20px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.7);
+    }
+    main {
+      flex-grow: 1;
+      padding: 30px 20px;
+      max-width: 800px;
+      width: 100%;
+      background: rgba(30,30,30,0.85);
+      margin-top: 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(255,255,255,0.1);
+      text-align: center;
+    }
+    button {
+      background-color: #1e90ff;
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #04118a;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Hockey’s Nights</h1>
+    <button id="logout-btn">Déconnexion</button>
+  </header>
+  <main>
+    <h2>Bienvenue, <span id="user-name">...</span> !</h2>
+    <p>Voici votre espace personnel.</p>
+    <p>Accédez à vos jeux, statistiques et paramètres ici.</p>
+    <button id="start-game-btn">Jouer maintenant</button>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+  <script>
+    // Configuration Firebase (à adapter si besoin)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBe7xozevYm9Pol6_RjYRza0ackhY7p3M4",
+      authDomain: "hockey-s-nights.firebaseapp.com",
+      projectId: "hockey-s-nights",
+      storageBucket: "hockey-s-nights.firebasestorage.app",
+      messagingSenderId: "238322019721",
+      appId: "1:238322019721:web:d9c914eef7a379bd024558",
+      measurementId: "G-05Q61NFRJ8"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    const userNameSpan = document.getElementById('user-name');
+    const logoutBtn = document.getElementById('logout-btn');
+    const startGameBtn = document.getElementById('start-game-btn');
+
+    // Vérifie si utilisateur connecté
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        // Affiche le pseudo (displayName) ou email si pas de pseudo
+        userNameSpan.textContent = user.displayName || user.email;
+      } else {
+        // Pas connecté → redirection vers page de connexion
+        window.location.href = "connexion.html";
+      }
+    });
+
+    // Déconnexion
+    logoutBtn.addEventListener('click', () => {
+      auth.signOut().then(() => {
+        window.location.href = "connexion.html";
+      });
+    });
+
+    // Bouton jouer (redirection ou lancement)
+    startGameBtn.addEventListener('click', () => {
+      window.location.href = "jeu.html"; // ou autre page du jeu
+    });
+  </script>
+</body>
+</html>

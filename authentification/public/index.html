@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auth - Inscription & Connexion</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f4f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .container {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    width: 320px;
+  }
+  h2 {
+    margin-bottom: 20px;
+    text-align: center;
+    color: #333;
+  }
+  label {
+    display: block;
+    margin: 12px 0 6px;
+    color: #555;
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    font-size: 14px;
+  }
+  input[type="submit"] {
+    margin-top: 20px;
+    width: 100%;
+    background: #007BFF;
+    border: none;
+    color: white;
+    padding: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  input[type="submit"]:hover {
+    background: #0056b3;
+  }
+  .message {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+  }
+  .error {
+    background: #f8d7da;
+    color: #842029;
+  }
+  .success {
+    background: #d1e7dd;
+    color: #0f5132;
+  }
+  .toggle-link {
+    margin-top: 15px;
+    text-align: center;
+    cursor: pointer;
+    color: #007BFF;
+    text-decoration: underline;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="auth-container">
+
+  <!-- Inscription -->
+  <form id="register-form">
+    <h2>Inscription</h2>
+    <label for="register-username">Pseudo</label>
+    <input type="text" id="register-username" name="username" required minlength="3" maxlength="20" />
+
+    <label for="register-email">Email</label>
+    <input type="email" id="register-email" name="email" required />
+
+    <label for="register-password">Mot de passe</label>
+    <input type="password" id="register-password" name="password" required minlength="6" />
+
+    <label for="register-password-confirm">Confirmer mot de passe</label>
+    <input type="password" id="register-password-confirm" name="passwordConfirm" required minlength="6" />
+
+    <input type="submit" value="S'inscrire" />
+    <div class="message" id="register-message"></div>
+    <div class="toggle-link" id="to-login">Déjà un compte ? Connectez-vous</div>
+  </form>
+
+  <!-- Connexion (hidden by default) -->
+  <form id="login-form" style="display:none;">
+    <h2>Connexion</h2>
+    <label for="login-email">Email</label>
+    <input type="email" id="login-email" name="email" required />
+
+    <label for="login-password">Mot de passe</label>
+    <input type="password" id="login-password" name="password" required />
+
+    <input type="submit" value="Se connecter" />
+    <div class="message" id="login-message"></div>
+    <div class="toggle-link" id="to-register">Pas encore de compte ? Inscrivez-vous</div>
+  </form>
+
+</div>
+
+<script>
+  // Switch forms
+  document.getElementById('to-login').addEventListener('click', () => {
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('login-form').style.display = 'block';
+    clearMessages();
+  });
+  document.getElementById('to-register').addEventListener('click', () => {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('register-form').style.display = 'block';
+    clearMessages();
+  });
+
+  function clearMessages() {
+    document.getElementById('register-message').textContent = '';
+    document.getElementById('register-message').className = 'message';
+    document.getElementById('login-message').textContent = '';
+    document.getElementById('login-message').className = 'message';
+  }
+
+  // Inscription form submit
+  document.getElementById('register-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    clearMessages();
+
+    const username = e.target.username.value.trim();
+    const email = e.target.email.value.trim();
+    const password = e.target.password.value;
+    const passwordConfirm = e.target.passwordConfirm.value;
+
+    if(password !== passwordConfirm) {
+      showMessage('register-message', 'Les mots de passe ne correspondent pas.', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({username, email, password})
+      });
+      const data = await res.json();
+      if(res.ok) {
+        showMessage('register-message', data.message, 'success');
+        e.target.reset();
+      } else {
+        showMessage('register-message', data.message || 'Erreur lors de l'inscription.', 'error');
+      }
+    } catch (err) {
+      showMessage('register-message', 'Erreur réseau.', 'error');
+    }
+  });
+
+  // Connexion form submit
+  document.getElementById('login-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    clearMessages();
+
+    const email = e.target.email.value.trim();
+    const password = e.target.password.value;
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({email, password})
+      });
+      const data = await res.json();
+      if(res.ok) {
+        showMessage('login-message', `Bienvenue ${data.username} !`, 'success');
+        e.target.reset();
+      } else {
+        showMessage('login-message', data.message || 'Erreur lors de la connexion.', 'error');
+      }
+    } catch (err) {
+      showMessage('login-message', 'Erreur réseau.', 'error');
+    }
+  });
+
+  function showMessage(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'message ' + type;
+  }
+</script>
+
+</body>
+</html>
